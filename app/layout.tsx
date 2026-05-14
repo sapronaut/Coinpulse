@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Header from "@/components/Header"; // Ensure this path is correct
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,21 +14,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Coinpulse",
-  description: "Crypto Screener App with a built-in High-Frequency Terminal & Dasboard",
+  title: "CoinPulse",
+  description: "Crypto Screener App with a built-in High-Frequency Terminal & Dashboard",
 };
 
 export default function RootLayout({
-  children,
-}: Readonly<{
+                                     children,
+                                   }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
-    </html>
+      <html lang="en" className="dark">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <Header />
+      {children}
+      </body>
+      </html>
   );
 }
