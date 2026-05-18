@@ -1,72 +1,61 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { fetcher } from '@/lib/coingecko.actions';
-import DataTable from '@/components/DataTable';
-import Image from 'next/image';
-import { cn, formatCurrency, formatPercentage } from '@/lib/utils';
-import { TrendingDown, TrendingUp } from 'lucide-react';
-import { CategoriesFallback } from './fallback';
 
-const Categories = async () => {
-    try {
-        const categories = await fetcher<Category[]>('/coins/categories');
+export default function Categories() {
+    const [categories, setCategories] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
-        const columns: DataTableColumn<Category>[] = [
-            { header: 'Category', cellClassName: 'category-cell', cell: (category) => category.name },
-            {
-                header: 'Top Gainers',
-                cellClassName: 'top-gainers-cell',
-                cell: (category) =>
-                    category.top_3_coins.map((coin) => (
-                        <Image src={coin} alt={coin} key={coin} width={28} height={28} />
-                    )),
-            },
-            {
-                header: '24h Change',
-                cellClassName: 'change-header-cell',
-                cell: (category) => {
-                    const isTrendingUp = category.market_cap_change_24h > 0;
+    useEffect(() => {
+        const loadCategoriesData = async () => {
+            try {
+                // Safeguard the async fetch inside the side-effect hook execution cycle
+                const data = await fetcher<any[]>('coins/categories');
+                setCategories(data ?? []);
+            } catch (err) {
+                console.error("Failed to gather asset categories:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-                    return (
-                        <div className={cn('change-cell', isTrendingUp ? 'text-green-500' : 'text-red-500')}>
-                            <p className="flex items-center">
-                                {formatPercentage(category.market_cap_change_24h)}
-                                {isTrendingUp ? (
-                                    <TrendingUp width={16} height={16} />
-                                ) : (
-                                    <TrendingDown width={16} height={16} />
-                                )}
-                            </p>
-                        </div>
-                    );
-                },
-            },
-            {
-                header: 'Market Cap',
-                cellClassName: 'market-cap-cell',
-                cell: (category) => formatCurrency(category.market_cap),
-            },
-            {
-                header: '24h Volume',
-                cellClassName: 'volume-cell',
-                cell: (category) => formatCurrency(category.volume_24h),
-            },
-        ];
+        loadCategoriesData();
+    }, []);
 
+    if (isLoading) {
         return (
-            <div id="categories" className="custom-scrollbar">
-                <h4>Top Categories</h4>
-
-                <DataTable
-                    columns={columns}
-                    data={categories?.slice(0, 10)}
-                    rowKey={(_, index) => index}
-                    tableClassName="mt-3"
-                />
+            <div className="w-full bg-[#1a1c1e] p-6 rounded-3xl border border-gray-800 shadow-xl animate-pulse">
+                <div className="h-6 w-48 bg-gray-700 rounded mb-4" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="h-16 bg-gray-800 rounded-2xl" />
+                    ))}
+                </div>
             </div>
         );
-    } catch (error) {
-        console.error('Error fetching categories:', error);
-        return <CategoriesFallback />;
     }
-};
 
-export default Categories;
+    return (
+        <div className="w-full bg-[#1a1c1e] p-6 rounded-3xl border border-gray-800 shadow-xl">
+            <h2 className="text-xl font-bold text-white mb-4">Trending Crypto Categories</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {categories?.slice(0, 4).map((category) => (
+                    <div
+                        key={category.id}
+                        className="p-4 bg-[#111214] border border-gray-800 rounded-2xl flex flex-col justify-between hover:border-purple-500/50 transition-all cursor-pointer"
+                    >
+                        <div>
+                            <p className="text-sm font-semibold text-white truncate">{category.name}</p>
+                            <p className="text-xs text-gray-500 mt-1">Market Cap Change</p>
+                        </div>
+                        <span className={`text-sm font-mono mt-2 block ${(category.market_cap_change_24h ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {(category.market_cap_change_24h ?? 0) >= 0 ? '+' : ''}
+                            {category.market_cap_change_24h?.toFixed(2)}%
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

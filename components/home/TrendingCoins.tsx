@@ -1,78 +1,62 @@
-import { fetcher } from '@/lib/coingecko.actions';
-import Link from 'next/link';
-import Image from 'next/image';
-import { cn, formatCurrency, formatPercentage } from '@/lib/utils';
-import { TrendingDown, TrendingUp } from 'lucide-react';
-import DataTable from '@/components/DataTable';
-import { TrendingCoinsFallback } from './fallback';
+"use client";
 
-const TrendingCoins = async () => {
-    let trendingCoins;
+import React, { useState, useEffect } from "react";
+import { fetcher } from "@/lib/coingecko.actions";
 
-    try {
-        trendingCoins = await fetcher<{ coins: TrendingCoin[] }>('/search/trending', undefined, 300);
-    } catch (error) {
-        console.error('Error fetching trending coins:', error);
-        return <TrendingCoinsFallback />;
+export default function TrendingCoins() {
+    const [trending, setTrending] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        const loadTrending = async () => {
+            try {
+                // Safely fetch on the client side after mount
+                const data = await fetcher<any>("search/trending");
+                setTrending(data?.coins || []);
+            } catch (err) {
+                console.error("Failed to fetch trending coins:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadTrending();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <div className="w-full bg-[#1a1c1e] p-6 rounded-3xl border border-gray-800 animate-pulse space-y-4">
+                <div className="h-5 w-32 bg-gray-700 rounded" />
+                <div className="space-y-3">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-12 bg-gray-800 rounded-xl" />
+                    ))}
+                </div>
+            </div>
+        );
     }
 
-    const columns: DataTableColumn<TrendingCoin>[] = [
-        {
-            header: 'Name',
-            cellClassName: 'name-cell',
-            cell: (coin) => {
-                const item = coin.item;
-
-                return (
-                    <Link href={`/coins/${item.id}`}>
-                        <Image src={item.large} alt={item.name} width={36} height={36} />
-                        <p>{item.name}</p>
-                    </Link>
-                );
-            },
-        },
-        {
-            header: '24h Change',
-            cellClassName: 'change-cell',
-            cell: (coin) => {
-                const item = coin.item;
-                const isTrendingUp = item.data.price_change_percentage_24h.usd > 0;
-
-                return (
-                    <div className={cn('price-change', isTrendingUp ? 'text-green-500' : 'text-red-500')}>
-                        <p className="flex items-center">
-                            {formatPercentage(item.data.price_change_percentage_24h.usd)}
-                            {isTrendingUp ? (
-                                <TrendingUp width={16} height={16} />
-                            ) : (
-                                <TrendingDown width={16} height={16} />
-                            )}
-                        </p>
-                    </div>
-                );
-            },
-        },
-        {
-            header: 'Price',
-            cellClassName: 'price-cell',
-            cell: (coin) => formatCurrency(coin.item.data.price),
-        },
-    ];
-
     return (
-        <div id="trending-coins">
-            <h4>Trending Coins</h4>
-
-            <DataTable
-                data={trendingCoins.coins.slice(0, 6) || []}
-                columns={columns}
-                rowKey={(coin) => coin.item.id}
-                tableClassName="trending-coins-table"
-                headerCellClassName="py-3!"
-                bodyCellClassName="py-2!"
-            />
+        <div className="w-full bg-[#1a1c1e] p-6 rounded-3xl border border-gray-800 shadow-xl">
+            <h3 className="text-md font-bold text-gray-400 uppercase tracking-wider mb-4">Trending Coins</h3>
+            <div className="space-y-3">
+                {trending.slice(0, 5).map((item: any) => {
+                    const coin = item.item;
+                    return (
+                        <div key={coin.id} className="flex items-center justify-between p-3 bg-[#111214] rounded-2xl border border-gray-800/50">
+                            <div className="flex items-center space-x-3">
+                                <img src={coin.small} alt={coin.name} className="w-6 h-6 rounded-full" />
+                                <div>
+                                    <p className="text-sm font-semibold text-white">{coin.name}</p>
+                                    <p className="text-xs text-gray-500 uppercase">{coin.symbol}</p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm font-mono text-white">#{coin.market_cap_rank || "N/A"}</p>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
-};
-
-export default TrendingCoins;
+}

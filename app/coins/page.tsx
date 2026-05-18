@@ -1,104 +1,76 @@
-import { fetcher } from '@/lib/coingecko.actions';
-import Image from 'next/image';
-import Link from 'next/link';
+"use client";
 
-import { cn, formatPercentage, formatCurrency } from '@/lib/utils';
-import DataTable from '@/components/DataTable';
-import CoinsPagination from '@/components/CoinsPagination';
+import React, { useState, useEffect } from "react";
+import { fetcher } from "@/lib/coingecko.actions";
+import DataTable from "@/components/DataTable";
 
-const Coins = async ({ searchParams }: NextPageProps) => {
-    const { page } = await searchParams;
+// 1. Keep your fallback loaders completely synchronous
+export function TrendingCoinsFallback() {
+    return (
+        <div className="flex flex-col items-center justify-center py-24 space-y-3">
+            <div className="w-8 h-8 border-4 border-t-purple-500 border-gray-800 rounded-full animate-spin" />
+            <p className="text-sm text-gray-400">Streaming market index matrix...</p>
+        </div>
+    );
+}
 
-    const currentPage = Number(page) || 1;
-    const perPage = 10;
+// 2. CRITICAL: TrendingCoins must NOT be an async function since it is a Client Component
+export default function Page() {
+    const [trendingCoins, setTrendingCoins] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    const coinsData = await fetcher<CoinMarketData[]>('/coins/markets', {
-        vs_currency: 'usd',
-        order: 'market_cap_desc',
-        per_page: perPage,
-        page: currentPage,
-        sparkline: 'false',
-        price_change_percentage: '24h',
-    });
+    // 3. Move the async data fetching logic INSIDE a useEffect hook
+    useEffect(() => {
+        const loadTrendingAssets = async () => {
+            try {
+                // Fetch top trending markets or coins
+                const data = await fetcher<any[]>("coins/markets", {
+                    vs_currency: "usd",
+                    order: "gecko_desc",
+                    per_page: "10",
+                    page: "1"
+                });
+                if (data) setTrendingCoins(data);
+            } catch (err) {
+                console.error("Failed to compile dashboard metrics:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-    const columns: DataTableColumn<CoinMarketData>[] = [
-        {
-            header: 'Rank',
-            cellClassName: 'rank-cell',
-            cell: (coin) => (
-                <>
-                    #{coin.market_cap_rank}
-                    <Link href={`/coins/${coin.id}`} aria-label="View coin" />
-                </>
-            ),
-        },
-        {
-            header: 'Token',
-            cellClassName: 'token-cell',
-            cell: (coin) => (
-                <div className="token-info">
-                    <Image src={coin.image} alt={coin.name} width={36} height={36} />
-                    <p>
-                        {coin.name} ({coin.symbol.toUpperCase()})
-                    </p>
-                </div>
-            ),
-        },
-        {
-            header: 'Price',
-            cellClassName: 'price-cell',
-            cell: (coin) => formatCurrency(coin.current_price),
-        },
-        {
-            header: '24h Change',
-            cellClassName: 'change-cell',
-            cell: (coin) => {
-                const isTrendingUp = coin.price_change_percentage_24h > 0;
+        loadTrendingAssets();
+    }, []);
 
-                return (
-                    <span
-                        className={cn('change-value', {
-                            'text-green-600': isTrendingUp,
-                            'text-red-500': !isTrendingUp,
-                        })}
-                    >
-            {isTrendingUp && '+'}
-                        {formatPercentage(coin.price_change_percentage_24h)}
-          </span>
-                );
-            },
-        },
-        {
-            header: 'Market Cap',
-            cellClassName: 'market-cap-cell',
-            cell: (coin) => formatCurrency(coin.market_cap),
-        },
-    ];
-
-    const hasMorePages = coinsData.length === perPage;
-
-    const estimatedTotalPages = currentPage >= 100 ? Math.ceil(currentPage / 100) * 100 + 100 : 100;
+    // Placeholder actions for the table interaction layers
+    const handleSelectCoin = (id: string) => {
+        console.log("Navigating to asset tracking profile:", id);
+    };
 
     return (
-        <main id="coins-page">
-            <div className="content">
-                <h4>All Coins</h4>
+        <main className="w-full max-w-[1600px] mx-auto p-4 md:p-6 min-h-screen text-white">
+            <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold tracking-tight">Trending Market Matrix</h2>
+                    <span className="text-xs bg-purple-500/10 text-purple-400 px-2.5 py-1 rounded-full border border-purple-500/20 font-medium">
+                        Live Data Feed
+                    </span>
+                </div>
 
-                <DataTable
-                    tableClassName="coins-table"
-                    columns={columns}
-                    data={coinsData}
-                    rowKey={(coin) => coin.id}
-                />
-
-                <CoinsPagination
-                    currentPage={currentPage}
-                    totalPages={estimatedTotalPages}
-                    hasMorePages={hasMorePages}
-                />
-            </div>
+                <div className="bg-[#1a1c1e] p-4 md:p-6 rounded-3xl border border-gray-800 shadow-xl overflow-x-auto">
+                    {isLoading ? (
+                        <TrendingCoinsFallback />
+                    ) : (
+                        /* CRITICAL: We pass string matching metrics rather than passing raw functions
+                          to protect the serialization parameters across client states!
+                        */
+                        <DataTable
+                            coins={trendingCoins}
+                            onSelectCoin={handleSelectCoin}
+                            selectedCoinId=""
+                        />
+                    )}
+                </div>
+            </section>
         </main>
     );
-};
-
-export default Coins;
+}

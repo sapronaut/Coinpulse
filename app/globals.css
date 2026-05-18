@@ -967,3 +967,25 @@
 .custom-scrollbar [data-slot='table-container']::-webkit-scrollbar-thumb:hover {
   background: #171a34;
 }
+/* Update your home layout grid structure properties */
+.main-container {
+  width: 100%;
+  max-width: 1440px; /* Limits the ultra-wide stretch on massive monitors */
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1.5rem;
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Stack into a single clean column on mobile screens */
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* When the browser is wide enough, automatically split into balanced, proportional panels */
+@media (min-width: 1024px) {
+  .home-grid {
+    grid-template-columns: 1.6fr 1.1fr; /* Allocates more room to the chart while scaling trending metrics */
+  }
+}

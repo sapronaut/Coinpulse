@@ -1,4 +1,6 @@
-import { cn } from "@/lib/utils";
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import {
     Table,
     TableBody,
@@ -6,65 +8,85 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table"
-import React from 'react'
+} from "@/components/ui/table";
 
-// 1. Define the interface so the component knows what props to expect
-interface DataTableProps<T> {
-    columns: any[];
-    data: T[];
-    rowKey?: (item: T, index: number) => string; // Fixed name from rowKew to rowKey
-    tableClassName?: string;
-    headerRowClassName?: string;
-    headerCellClassName?: string;
-    bodyRowClassName?: string;
-    bodyCellClassName?: string;
-    headerClassName?: string;
+interface DataTableProps {
+    coins: any[];
+    onSelectCoin: (id: string) => void;
+    selectedCoinId: string;
 }
 
-const DataTable = <T,>({
-                           columns,
-                           data,
-                           rowKey, // Fixed typo here
-                           tableClassName,
-                           headerRowClassName,
-                           headerClassName,
-                           bodyRowClassName,
-                       }: DataTableProps<T>) => {
+export default function DataTable({ coins, onSelectCoin, selectedCoinId }: DataTableProps) {
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     return (
-        <Table className={cn('custom-scrollbar', tableClassName)}>
-            <TableHeader className={headerClassName}>
-                <TableRow className={cn('hover:bg-transparent', headerRowClassName)}>
-                    {columns.map((column, i) => (
-                        <TableHead
-                            key={i}
-                            className={cn('bg-[#1a1c1e] text-gray-400 py-4 first:pl-5 last:pr-5')}
-                        >
-                            {column.header}
-                        </TableHead>
-                    ))}
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead className="w-[60px]">#</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead className="text-right">24h Change</TableHead>
+                    <TableHead className="text-right">Market Cap</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {data.map((row, rowIndex) => (
-                    <TableRow
-                        // Use rowKey if provided, otherwise fallback to index
-                        key={rowKey ? rowKey(row, rowIndex) : rowIndex}
-                        className={cn(
-                            'overflow-hidden border-b border-gray-800 hover:bg-gray-800/30 relative',
-                            bodyRowClassName
-                        )}
-                    >
-                        {columns.map((column, columnIndex) => (
-                            <TableCell key={columnIndex} className={cn('py-4 first:pl-5 last:pr-5')}>
-                                {column.cell(row, rowIndex)}
+                {coins?.map((coin) => {
+                    const isSelected = selectedCoinId === coin.id;
+
+                    const currentPrice = coin.current_price ?? 0;
+                    const marketCap = coin.market_cap ?? 0;
+                    const priceChange = coin.price_change_percentage_24h ?? 0;
+
+                    return (
+                        <TableRow
+                            key={coin.id}
+                            onClick={() => onSelectCoin?.(coin.id)}
+                            className={`cursor-pointer transition-colors duration-150 ${
+                                isSelected
+                                    ? "bg-purple-500/10 hover:bg-purple-500/15 font-semibold text-purple-400"
+                                    : "hover:bg-muted/50"
+                            }`}
+                        >
+                            <TableCell className="font-mono">#{coin.market_cap_rank || coin.rank}</TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                    {coin.image && (
+                                        <img src={coin.image} alt={coin.name} className="w-5 h-5 object-contain" />
+                                    )}
+                                    <span className="font-medium text-white">{coin.name}</span>
+                                    <span className="text-xs text-gray-500 uppercase">{coin.symbol}</span>
+                                </div>
                             </TableCell>
-                        ))}
-                    </TableRow>
-                ))}
+
+                            {/* Added suppressHydrationWarning as a final double-layered defense */}
+                            <TableCell className="text-right font-mono text-white" suppressHydrationWarning>
+                                $ {isMounted
+                                ? currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                : currentPrice.toFixed(2)
+                            }
+                            </TableCell>
+
+                            <TableCell className={`text-right font-mono ${priceChange >= 0 ? "text-green-400" : "text-red-400"}`}>
+                                {priceChange >= 0 ? "+" : ""}
+                                {priceChange.toFixed(2)}%
+                            </TableCell>
+
+                            {/* Added suppressHydrationWarning here as well */}
+                            <TableCell className="text-right font-mono text-gray-300" suppressHydrationWarning>
+                                $ {isMounted
+                                ? marketCap.toLocaleString()
+                                : marketCap.toFixed(0)
+                            }
+                            </TableCell>
+                        </TableRow>
+                    );
+                })}
             </TableBody>
         </Table>
-    )
+    );
 }
-
-export default DataTable;
