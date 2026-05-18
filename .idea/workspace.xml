@@ -7,13 +7,7 @@
     <list default="true" id="3a9817b8-51dd-4232-9e6d-49f7a7f4e40b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/coins/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/coins/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/globals.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/DataTable.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/DataTable.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/Header.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/home/Categories.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/home/Categories.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/home/TrendingCoins.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/home/TrendingCoins.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/home/fallback.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/home/fallback.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/CandlestickChart.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/CandlestickChart.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -115,7 +109,7 @@
       <workItem from="1779034195772" duration="3505000" />
       <workItem from="1779071427869" duration="2974000" />
       <workItem from="1779080154169" duration="881000" />
-      <workItem from="1779104070359" duration="1587000" />
+      <workItem from="1779104070359" duration="4011000" />
     </task>
     <servers />
   </component>

@@ -1,76 +1,138 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { fetcher } from "@/lib/coingecko.actions";
 import DataTable from "@/components/DataTable";
+import CandlestickChart from "@/components/CandlestickChart";
+import Converter from "@/components/Converter";
+import TrendingSidebar from "@/components/TrendingSidebar";
 
-// 1. Keep your fallback loaders completely synchronous
-export function TrendingCoinsFallback() {
-    return (
-        <div className="flex flex-col items-center justify-center py-24 space-y-3">
-            <div className="w-8 h-8 border-4 border-t-purple-500 border-gray-800 rounded-full animate-spin" />
-            <p className="text-sm text-gray-400">Streaming market index matrix...</p>
-        </div>
-    );
-}
+export default function CoinsPage() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const selectedCoinId = searchParams.get("id") || "bitcoin";
 
-// 2. CRITICAL: TrendingCoins must NOT be an async function since it is a Client Component
-export default function Page() {
-    const [trendingCoins, setTrendingCoins] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [coins, setCoins] = useState<any[]>([]);
+    const [chartData, setChartData] = useState<number[][]>([]);
+    const [isLoadingCoins, setIsLoadingCoins] = useState<boolean>(true);
+    const [isLoadingChart, setIsLoadingChart] = useState<boolean>(false);
 
-    // 3. Move the async data fetching logic INSIDE a useEffect hook
+    const selectedCoinData = coins.find((c) => c.id === selectedCoinId);
+
     useEffect(() => {
-        const loadTrendingAssets = async () => {
+        const loadCoins = async () => {
             try {
-                // Fetch top trending markets or coins
                 const data = await fetcher<any[]>("coins/markets", {
                     vs_currency: "usd",
-                    order: "gecko_desc",
-                    per_page: "10",
+                    order: "market_cap_desc",
+                    per_page: "20",
                     page: "1"
                 });
-                if (data) setTrendingCoins(data);
+                if (data) setCoins(data);
             } catch (err) {
-                console.error("Failed to compile dashboard metrics:", err);
+                console.error("Failed to load market listings:", err);
             } finally {
-                setIsLoading(false);
+                setIsLoadingCoins(false);
             }
         };
-
-        loadTrendingAssets();
+        loadCoins();
     }, []);
 
-    // Placeholder actions for the table interaction layers
+    useEffect(() => {
+        if (!selectedCoinId) return;
+        const loadChartCoordinates = async () => {
+            setIsLoadingChart(true);
+            try {
+                const data = await fetcher<any>(`coins/${selectedCoinId}/ohlc`, {
+                    vs_currency: "usd",
+                    days: "7"
+                });
+                setChartData(data || []);
+            } catch (err) {
+                console.error(`Failed to fetch chart records for ${selectedCoinId}:`, err);
+                setChartData([]);
+            } finally {
+                setIsLoadingChart(false);
+            }
+        };
+        loadChartCoordinates();
+    }, [selectedCoinId]);
+
     const handleSelectCoin = (id: string) => {
-        console.log("Navigating to asset tracking profile:", id);
+        router.push(`/coins?id=${id}`);
     };
 
     return (
-        <main className="w-full max-w-[1600px] mx-auto p-4 md:p-6 min-h-screen text-white">
-            <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold tracking-tight">Trending Market Matrix</h2>
-                    <span className="text-xs bg-purple-500/10 text-purple-400 px-2.5 py-1 rounded-full border border-purple-500/20 font-medium">
-                        Live Data Feed
-                    </span>
+        <main className="w-full max-w-[1600px] mx-auto p-4 md:p-6 min-h-screen text-white space-y-6">
+            <header>
+                <h1 className="text-2xl font-bold tracking-tight">Digital Asset Trading Desk</h1>
+                <p className="text-sm text-gray-400 mt-1">Select an asset to view advanced telemetry and execution matrices.</p>
+            </header>
+
+            {/* FORCE ROW WRAPPER USING BULLETPROOF INLINE CSS */}
+            <div style={{ display: 'flex', gap: '24px', width: '100%', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+
+                {/* CANDLESTICK PANEL (Takes up roughly 66% width) */}
+                <div
+                    className="bg-[#1a1c1e] p-5 rounded-3xl border border-gray-800 shadow-xl space-y-4"
+                    style={{ flex: '2 1 600px', minWidth: '320px' }}
+                >
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-md font-semibold text-gray-300 capitalize tracking-wide">
+                            {selectedCoinId} Market Value (7D)
+                        </h3>
+                        {isLoadingChart && (
+                            <div className="w-4 h-4 border-2 border-t-purple-400 border-gray-700 rounded-full animate-spin" />
+                        )}
+                    </div>
+                    <div className="min-h-[350px] flex items-center justify-center bg-[#111214] rounded-2xl border border-gray-900 overflow-hidden">
+                        {chartData.length > 0 ? (
+                            <CandlestickChart data={chartData} height={350} />
+                        ) : (
+                            <p className="text-xs text-gray-500">
+                                {isLoadingChart ? "Re-aligning canvas arrays..." : "No coordinates found."}
+                            </p>
+                        )}
+                    </div>
                 </div>
 
-                <div className="bg-[#1a1c1e] p-4 md:p-6 rounded-3xl border border-gray-800 shadow-xl overflow-x-auto">
-                    {isLoading ? (
-                        <TrendingCoinsFallback />
-                    ) : (
-                        /* CRITICAL: We pass string matching metrics rather than passing raw functions
-                          to protect the serialization parameters across client states!
-                        */
-                        <DataTable
-                            coins={trendingCoins}
-                            onSelectCoin={handleSelectCoin}
-                            selectedCoinId=""
-                        />
-                    )}
+                {/* SIDEBAR CONTAINER (Takes up roughly 33% width) */}
+                <div className="space-y-6" style={{ flex: '1 1 300px', minWidth: '280px' }}>
+                    {/* Converter */}
+                    <div className="bg-[#1a1c1e] p-5 rounded-3xl border border-gray-800 shadow-xl">
+                        <h3 className="text-md font-semibold text-gray-300 tracking-wide mb-4">Currency Converter Matrix</h3>
+                        {selectedCoinData ? (
+                            <Converter coinSymbol={selectedCoinData.symbol} currentPriceUsd={selectedCoinData.current_price} coinName={selectedCoinData.name} />
+                        ) : (
+                            <div className="py-2 text-center">
+                                <Converter coinSymbol={selectedCoinId.substring(0, 4).toUpperCase()} currentPriceUsd={chartData[chartData.length - 1]?.[4] ?? 0} coinName={selectedCoinId} />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Trending Sidebar */}
+                    <TrendingSidebar onSelectCoin={handleSelectCoin} />
                 </div>
-            </section>
+
+            </div>
+
+            {/* FULL WIDTH MARKETS TABLE UNDERNEATH */}
+            <div className="bg-[#1a1c1e] p-4 md:p-6 rounded-3xl border border-gray-800 shadow-xl overflow-x-auto">
+                <h3 className="text-lg font-bold tracking-tight mb-4 px-2">Cryptocurrency Markets</h3>
+                {isLoadingCoins ? (
+                    <div className="flex flex-col items-center justify-center py-32 space-y-3">
+                        <div className="w-8 h-8 border-4 border-t-purple-500 border-gray-800 rounded-full animate-spin" />
+                        <p className="text-sm text-gray-400">Assembling core asset structures...</p>
+                    </div>
+                ) : (
+                    <DataTable
+                        coins={coins}
+                        onSelectCoin={handleSelectCoin}
+                        selectedCoinId={selectedCoinId}
+                    />
+                )}
+            </div>
         </main>
     );
 }

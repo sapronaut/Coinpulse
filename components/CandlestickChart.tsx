@@ -12,6 +12,19 @@ import { CandlestickSeries, createChart, IChartApi, ISeriesApi } from 'lightweig
 import { fetcher } from '@/lib/coingecko.actions';
 import { convertOHLCData } from '@/lib/utils';
 
+// Added explicit type configurations to satisfy compiler constraints
+interface CandlestickChartProps {
+    children?: React.ReactNode;
+    data: number[][];
+    coinId?: string;
+    height?: number;
+    initialPeriod?: any;
+    liveOhlcv?: any;
+    mode?: string;
+    liveInterval?: any;
+    setLiveInterval?: (val: any) => void;
+}
+
 const CandlestickChart = ({
                               children,
                               data,
@@ -29,14 +42,22 @@ const CandlestickChart = ({
     const prevOhlcDataLength = useRef<number>(data?.length || 0);
 
     const [period, setPeriod] = useState(initialPeriod);
-    const [ohlcData, setOhlcData] = useState<OHLCData[]>(data ?? []);
+    const [ohlcData, setOhlcData] = useState<number[][]>(data ?? []);
     const [isPending, startTransition] = useTransition();
 
-    const fetchOHLCData = async (selectedPeriod: Period) => {
+    // Re-sync local data state if the parent page component pumps down fresh data strings
+    useEffect(() => {
+        if (data) {
+            setOhlcData(data);
+        }
+    }, [data]);
+
+    const fetchOHLCData = async (selectedPeriod: any) => {
+        if (!coinId) return;
         try {
             const { days, interval } = PERIOD_CONFIG[selectedPeriod];
 
-            const newData = await fetcher<OHLCData[]>(`/coins/${coinId}/ohlc`, {
+            const newData = await fetcher<number[][]>(`/coins/${coinId}/ohlc`, {
                 vs_currency: 'usd',
                 days,
                 interval,
@@ -51,7 +72,7 @@ const CandlestickChart = ({
         }
     };
 
-    const handlePeriodChange = (newPeriod: Period) => {
+    const handlePeriodChange = (newPeriod: any) => {
         if (newPeriod === period) return;
 
         setPeriod(newPeriod);
@@ -71,7 +92,7 @@ const CandlestickChart = ({
         const series = chart.addSeries(CandlestickSeries, getCandlestickConfig());
 
         const convertedToSeconds = ohlcData.map(
-            (item) => [Math.floor(item[0] / 1000), item[1], item[2], item[3], item[4]] as OHLCData,
+            (item) => [Math.floor(item[0] / 1000), item[1], item[2], item[3], item[4]] as number[],
         );
 
         series.setData(convertOHLCData(convertedToSeconds));
@@ -92,16 +113,16 @@ const CandlestickChart = ({
             chartRef.current = null;
             candleSeriesRef.current = null;
         };
-    }, [height, period]);
+    }, [height, period, ohlcData]);
 
     useEffect(() => {
         if (!candleSeriesRef.current) return;
 
         const convertedToSeconds = ohlcData.map(
-            (item) => [Math.floor(item[0] / 1000), item[1], item[2], item[3], item[4]] as OHLCData,
+            (item) => [Math.floor(item[0] / 1000), item[1], item[2], item[3], item[4]] as number[],
         );
 
-        let merged: OHLCData[];
+        let merged: number[][];
 
         if (liveOhlcv) {
             const liveTimestamp = liveOhlcv[0];
@@ -131,11 +152,15 @@ const CandlestickChart = ({
     }, [ohlcData, period, liveOhlcv, mode]);
 
     return (
-        <div id="candlestick-chart">
-            <div className="chart-header">
+        /* CRITICAL FIX: Explicitly set the width to 100% and overflow to hidden.
+          This stops the lightweight-charts engine from expanding past its flex boundaries
+          and guarantees the sidebar can jump right up next to it!
+        */
+        <div id="candlestick-chart" className="w-full overflow-hidden flex flex-col">
+            <div className="chart-header flex flex-wrap items-center justify-between gap-2 mb-4">
                 <div className="flex-1">{children}</div>
 
-                <div className="button-group">
+                <div className="button-group flex items-center">
                     <span className="text-sm mx-2 font-medium text-purple-100/50">Period:</span>
                     {PERIOD_BUTTONS.map(({ value, label }) => (
                         <button
@@ -150,7 +175,7 @@ const CandlestickChart = ({
                 </div>
 
                 {liveInterval && (
-                    <div className="button-group">
+                    <div className="button-group flex items-center">
                         <span className="text-sm mx-2 font-medium text-purple-100/50">Update Frequency:</span>
                         {LIVE_INTERVAL_BUTTONS.map(({ value, label }) => (
                             <button
@@ -166,7 +191,7 @@ const CandlestickChart = ({
                 )}
             </div>
 
-            <div ref={chartContainerRef} className="chart" style={{ height }} />
+            <div ref={chartContainerRef} className="chart w-full" style={{ height }} />
         </div>
     );
 };
