@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { fetcher } from "@/lib/coingecko.actions";
 import DataTable from "@/components/DataTable";
@@ -8,7 +8,7 @@ import CandlestickChart from "@/components/CandlestickChart";
 import Converter from "@/components/Converter";
 import TrendingSidebar from "@/components/TrendingSidebar";
 
-export default function CoinsPage() {
+function CoinsContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const selectedCoinId = searchParams.get("id") || "bitcoin";
@@ -70,10 +70,8 @@ export default function CoinsPage() {
                 <p className="text-sm text-gray-400 mt-1">Select an asset to view advanced telemetry and execution matrices.</p>
             </header>
 
-            {/* FORCE ROW WRAPPER USING BULLETPROOF INLINE CSS */}
             <div style={{ display: 'flex', gap: '24px', width: '100%', flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
-                {/* CANDLESTICK PANEL (Takes up roughly 66% width) */}
                 <div
                     className="bg-[#1a1c1e] p-5 rounded-3xl border border-gray-800 shadow-xl space-y-4"
                     style={{ flex: '2 1 600px', minWidth: '320px' }}
@@ -97,9 +95,7 @@ export default function CoinsPage() {
                     </div>
                 </div>
 
-                {/* SIDEBAR CONTAINER (Takes up roughly 33% width) */}
                 <div className="space-y-6" style={{ flex: '1 1 300px', minWidth: '280px' }}>
-                    {/* Converter */}
                     <div className="bg-[#1a1c1e] p-5 rounded-3xl border border-gray-800 shadow-xl">
                         <h3 className="text-md font-semibold text-gray-300 tracking-wide mb-4">Currency Converter Matrix</h3>
                         {selectedCoinData ? (
@@ -111,13 +107,11 @@ export default function CoinsPage() {
                         )}
                     </div>
 
-                    {/* Trending Sidebar */}
                     <TrendingSidebar onSelectCoin={handleSelectCoin} />
                 </div>
 
             </div>
 
-            {/* FULL WIDTH MARKETS TABLE UNDERNEATH */}
             <div className="bg-[#1a1c1e] p-4 md:p-6 rounded-3xl border border-gray-800 shadow-xl overflow-x-auto">
                 <h3 className="text-lg font-bold tracking-tight mb-4 px-2">Cryptocurrency Markets</h3>
                 {isLoadingCoins ? (
@@ -134,5 +128,17 @@ export default function CoinsPage() {
                 )}
             </div>
         </main>
+    );
+}
+
+export default function CoinsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="w-8 h-8 border-4 border-t-purple-500 border-gray-800 rounded-full animate-spin" />
+            </div>
+        }>
+            <CoinsContent />
+        </Suspense>
     );
 }
