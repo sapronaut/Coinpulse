@@ -95,7 +95,7 @@ const CandlestickChart = ({
             (item) => [Math.floor(item[0] / 1000), item[1], item[2], item[3], item[4]] as number[],
         );
 
-        series.setData(convertOHLCData(convertedToSeconds));
+        series.setData(convertOHLCData(convertedToSeconds as OHLCData[]));
         chart.timeScale().fitContent();
 
         chartRef.current = chart;
@@ -140,7 +140,7 @@ const CandlestickChart = ({
 
         merged.sort((a, b) => a[0] - b[0]);
 
-        const converted = convertOHLCData(merged);
+        const converted = convertOHLCData(merged as OHLCData[]);
         candleSeriesRef.current.setData(converted);
 
         const dataChanged = prevOhlcDataLength.current !== ohlcData.length;
