@@ -20,7 +20,6 @@ export default function ClientSearchProvider({ children }: { children: React.Rea
                 isOpen={isSearchOpen}
                 onClose={() => setIsSearchOpen(false)}
                 onSelectCoin={handleSelectCoin}
-                setIsOpenOverride={setIsSearchOpen}
             />
         </>
     );
