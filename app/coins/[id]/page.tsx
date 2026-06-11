@@ -72,9 +72,9 @@ const Page = async ({ params }: NextPageProps) => {
 
             <section className="secondary">
                 <Converter
-                    symbol={coinData.symbol}
-                    icon={coinData.image.small}
-                    priceList={coinData.market_data.current_price}
+                    coinSymbol={coinData.symbol}
+                    coinName={coinData.name}
+                    currentPriceUsd={coinData.market_data.current_price.usd}
                 />
 
                 <div className="details">
