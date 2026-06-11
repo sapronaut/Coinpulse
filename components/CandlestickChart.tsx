@@ -18,7 +18,7 @@ interface CandlestickChartProps {
     data: number[][];
     coinId?: string;
     height?: number;
-    initialPeriod?: any;
+    initialPeriod?: Period;
     liveOhlcv?: any;
     mode?: string;
     liveInterval?: any;
@@ -41,7 +41,7 @@ const CandlestickChart = ({
     const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
     const prevOhlcDataLength = useRef<number>(data?.length || 0);
 
-    const [period, setPeriod] = useState(initialPeriod);
+    const [period, setPeriod] = useState<Period>(initialPeriod);
     const [ohlcData, setOhlcData] = useState<number[][]>(data ?? []);
     const [isPending, startTransition] = useTransition();
 
@@ -52,7 +52,7 @@ const CandlestickChart = ({
         }
     }, [data]);
 
-    const fetchOHLCData = async (selectedPeriod: any) => {
+    const fetchOHLCData = async (selectedPeriod: Period) => {
         if (!coinId) return;
         try {
             const { days, interval } = PERIOD_CONFIG[selectedPeriod];
@@ -72,7 +72,7 @@ const CandlestickChart = ({
         }
     };
 
-    const handlePeriodChange = (newPeriod: any) => {
+    const handlePeriodChange = (newPeriod: Period) => {
         if (newPeriod === period) return;
 
         setPeriod(newPeriod);
