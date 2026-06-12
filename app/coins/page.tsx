@@ -14,7 +14,7 @@ function CoinsContent() {
     const selectedCoinId = searchParams.get("id") || "bitcoin";
 
     const [coins, setCoins] = useState<any[]>([]);
-    const [chartData, setChartData] = useState<number[][]>([]);
+    const [chartData, setChartData] = useState<OHLCData[]>([]);
     const [isLoadingCoins, setIsLoadingCoins] = useState<boolean>(true);
     const [isLoadingChart, setIsLoadingChart] = useState<boolean>(false);
 
@@ -44,7 +44,7 @@ function CoinsContent() {
         const loadChartCoordinates = async () => {
             setIsLoadingChart(true);
             try {
-                const data = await fetcher<any>(`coins/${selectedCoinId}/ohlc`, {
+                const data = await fetcher<OHLCData[]>(`coins/${selectedCoinId}/ohlc`, {
                     vs_currency: "usd",
                     days: "7"
                 });
