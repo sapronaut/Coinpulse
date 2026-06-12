@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { fetcher } from "@/lib/coingecko.actions";
-import DataTable from "@/components/DataTable";
+import MarketsTable from "@/components/MarketsTable";
 import CandlestickChart from "@/components/CandlestickChart";
 import Converter from "@/components/Converter";
 import TrendingSidebar from "@/components/TrendingSidebar";
@@ -120,7 +120,7 @@ function CoinsContent() {
                         <p className="text-sm text-gray-400">Assembling core asset structures...</p>
                     </div>
                 ) : (
-                    <DataTable
+                    <MarketsTable
                         coins={coins}
                         onSelectCoin={handleSelectCoin}
                         selectedCoinId={selectedCoinId}
